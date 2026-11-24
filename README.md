@@ -16,14 +16,14 @@ Users log one mood check in per day, write private journal entries, view mood tr
 3. Connect Firebase (creates `lib/firebase_options.dart`, which is git ignored):
    ```
    firebase login
-   flutterfire configure --project <your-firebase-project-id>
+   flutterfire configure --project mental-zen-baa3f
    ```
 4. Install packages and run:
    ```
    flutter pub get
    flutter run
    ```
-5. Deploy rules: `firebase deploy --only firestore:rules,storage`
+5. Deploy rules: `firebase use mental-zen-baa3f && firebase deploy --only firestore:rules,firestore:indexes` (Storage rules need the Blaze plan)
 
 ## Tests
 
