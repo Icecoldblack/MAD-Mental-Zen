@@ -1,0 +1,41 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // Curated resources: any signed in user can read, nobody can write from the app.
+    match /resources/{id} {
+      allow read: if signedIn();
+      allow write: if false;
+    }
+
+    // Everything a user owns lives under users/{uid}.
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      // One mood per day; doc id is yyyy-MM-dd.
+      match /moods/{day} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && day.matches('^\\d{4}-\\d{2}-\\d{2}$')
+          && request.resource.data.score is int
+          && request.resource.data.score >= 1
+          && request.resource.data.score <= 5
+          && (!('note' in request.resource.data) || request.resource.data.note.size() <= 500);
+      }
+
+      match /entries/{entryId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.title.size() <= 120
+          && request.resource.data.body.size() <= 20000;
+      }
+
+      match /{sub}/{docId} {
+        allow read, write: if isOwner(uid) && sub in ['reminders', 'favorites', 'prompts'];
+      }
+    }
+  }
+}
